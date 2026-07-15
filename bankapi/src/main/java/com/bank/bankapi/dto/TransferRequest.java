@@ -4,28 +4,51 @@ import java.math.BigDecimal;
 
 import com.bank.bankapi.model.AccountType;
 
-import jakarta.validation.constraints.DecimalMin;
-import jakarta.validation.constraints.NotNull;
-
 public class TransferRequest {
 
-    @NotNull(message = "Account type is required")
-    private AccountType fromAccount;
-
-    @NotNull(message = "Amount is required")
-    @DecimalMin(value = "0.01", message = "Amount must be greater than zero")
+    private String fromUsername;
+    private String toUsername;
+    private AccountType fromAccountType;
+    private AccountType toAccountType;
     private BigDecimal amount;
 
-    public AccountType getFromAccount() {
-        return fromAccount;
+    public TransferRequest() {
+    }
+
+    public String getFromUsername() {
+        return fromUsername;
+    }
+
+    public void setFromUsername(String fromUsername) {
+        this.fromUsername = fromUsername;
+    }
+
+    public String getToUsername() {
+        return toUsername;
+    }
+
+    public void setToUsername(String toUsername) {
+        this.toUsername = toUsername;
+    }
+
+    public AccountType getFromAccountType() {
+        return fromAccountType;
+    }
+
+    public void setFromAccountType(AccountType fromAccountType) {
+        this.fromAccountType = fromAccountType;
+    }
+
+    public AccountType getToAccountType() {
+        return toAccountType;
+    }
+
+    public void setToAccountType(AccountType toAccountType) {
+        this.toAccountType = toAccountType;
     }
 
     public BigDecimal getAmount() {
         return amount;
-    }
-
-    public void setFromAccount(AccountType fromAccount) {
-        this.fromAccount = fromAccount;
     }
 
     public void setAmount(BigDecimal amount) {
