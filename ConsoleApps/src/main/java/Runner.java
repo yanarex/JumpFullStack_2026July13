@@ -271,25 +271,88 @@ public class Runner {
         boolean flag = true;
         while (flag) {
             System.out.println("What would you like to do?");
-            System.out.println("1. View Accounts");
-            System.out.println("2. Transfer Funds");
-            System.out.println("3. Logout");
+            System.out.println("1. View Customers");
+            System.out.println("2. Add Customer");
+            System.out.println("3. Delete Customer");
+            System.out.println("4. View All Accounts");
+            System.out.println("6. Transfer Funds Between Accounts");
+            System.out.println("7. Logout");
 
             int choice = Integer.parseInt(sc.nextLine());
             switch (choice){
                 case 1:
-                    System.out.println("Viewing accounts");
+                    viewCustomers();
                     break;
                 case 2:
-                    System.out.println("Transferring funds");
+                    addCustomer();
                     break;
                 case 3:
+                    deleteCustomer();
+                    break;
+                case 4:
+                    viewAccounts();
+                    break;
+                case 7:
+                    transferFunds();
+                    break;
+                case 8:
                     logout(user);
-                    flag = false; // Exit the admin dashboard
+                    flag = false;
+                    break;
                 default:
-                    System.out.println("Invalid choice");
+                System.out.println("Invalid choice.");
             }
         }
+    }
+
+
+    private static void viewCustomers() {
+
+        if (users.isEmpty()) {
+            System.out.println("No accounts found.");
+            return;
+        }
+
+        for (Customer accounts : users) {
+            System.out.println(account);
+        }
+    }
+
+    private static void addCustomer() {
+
+        System.out.print("Username: ");
+        String username = sc.nextLine();
+
+        System.out.print("Password: ");
+        String password = sc.nextLine();
+
+        User customer = new Customer(username, password);
+
+        users.add(customer);
+
+        System.out.println("Customer added.");
+    }
+
+
+    private static void deleteCustomer() {
+
+        System.out.print("Enter username: ");
+        String username = sc.nextLine();
+
+        for (int i = 0; i < users.size(); i++) {
+
+            if (users.get(i).getUsername().equals(username)) {
+
+                users.remove(i);
+
+                System.out.println("Customer deleted.");
+                return;
+            } else {
+                System.out.println("There were no customers with that username");
+            }
+        }
+
+        System.out.println("Customer not found.");
     }
 
     
@@ -583,7 +646,7 @@ class CheckingAccount extends Account implements AccountOperations{
 
 class SavingsAccount extends Account implements AccountOperations{
     /**
-     * No-op placeholder implementation required by {@link AccountOperations}.
+     * No-op placeholder implementation
      * Actual deposit logic lives in {@link Account#deposit(double)}.
      */
     @Override
@@ -592,7 +655,7 @@ class SavingsAccount extends Account implements AccountOperations{
     }
 
     /**
-     * No-op placeholder implementation required by {@link AccountOperations}.
+     * No-op placeholder implementation
      * Actual withdrawal logic lives in {@link Account#withdraw(double)}.
      */
     @Override
@@ -601,7 +664,7 @@ class SavingsAccount extends Account implements AccountOperations{
     }
 
     /**
-     * No-op placeholder implementation required by {@link AccountOperations}.
+     * No-op placeholder implementation
      * Transfers are currently handled externally in {@code Runner.transfer}.
      */
     @Override
