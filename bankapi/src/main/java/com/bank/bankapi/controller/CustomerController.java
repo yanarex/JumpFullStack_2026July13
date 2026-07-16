@@ -17,6 +17,7 @@ import com.bank.bankapi.service.CustomerService;
 
 import jakarta.validation.Valid;
 
+@CrossOrigin(origins = "*")
 @RestController
 @RequestMapping("/api/customers")
 public class CustomerController {

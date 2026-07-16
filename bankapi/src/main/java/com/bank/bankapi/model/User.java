@@ -19,7 +19,7 @@ public class User {
     @JsonIgnore
     private String passwordHash;
 
-    private String userType;
+    private UserType userType;
 
     private Account checkingAccount;
     private Account savingsAccount;
@@ -31,7 +31,7 @@ public class User {
     public User(
             String username,
             String passwordHash,
-            String userType,
+            UserType userType,
             Account checkingAccount,
             Account savingsAccount) {
 
@@ -54,7 +54,7 @@ public class User {
         return passwordHash;
     }
 
-    public String getUserType() {
+    public UserType getUserType() {
         return userType;
     }
 
@@ -78,7 +78,7 @@ public class User {
         this.passwordHash = passwordHash;
     }
 
-    public void setUserType(String userType) {
+    public void setUserType(UserType userType) {
         this.userType = userType;
     }
 

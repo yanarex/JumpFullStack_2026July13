@@ -1,10 +1,11 @@
 package com.bank.bankapi.config;
 
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
-import com.bank.bankapi.config.AppConfig.PasswordEncoder;
 import com.bank.bankapi.model.User;
+import com.bank.bankapi.model.UserType;
 import com.bank.bankapi.repository.UserRepository;
 
 @Component
@@ -28,7 +29,7 @@ public class DataInitializer
             User admin = new User(
                     "admin",
                     passwordEncoder.encode("admin123"),
-                    "admin",
+                    UserType.ADMIN,
                     null,
                     null);
 

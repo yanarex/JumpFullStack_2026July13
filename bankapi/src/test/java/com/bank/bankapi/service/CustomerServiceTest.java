@@ -13,11 +13,12 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
-import com.bank.bankapi.config.AppConfig.PasswordEncoder;
 import com.bank.bankapi.model.Account;
 import com.bank.bankapi.model.AccountType;
 import com.bank.bankapi.model.User;
+import com.bank.bankapi.model.UserType;
 import com.bank.bankapi.repository.UserRepository;
 
 @ExtendWith(MockitoExtension.class)
@@ -50,7 +51,7 @@ class CustomerServiceTest {
         return new User(
                 "rohit",
                 "hashed-password",
-                "customer",
+                UserType.CUSTOMER,
                 checking,
                 savings);
     }

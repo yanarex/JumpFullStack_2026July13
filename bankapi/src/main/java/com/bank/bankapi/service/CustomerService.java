@@ -4,12 +4,13 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import com.bank.bankapi.config.AppConfig.PasswordEncoder;
 import com.bank.bankapi.model.Account;
 import com.bank.bankapi.model.AccountType;
 import com.bank.bankapi.model.User;
+import com.bank.bankapi.model.UserType;
 import com.bank.bankapi.repository.UserRepository;
 
 @Service
@@ -36,9 +37,7 @@ public class CustomerService {
                         String username,
                         String password) {
 
-                String cleanedUsername = cleanUsername(username);
-
-                if (userRepository.existsByUsername(cleanedUsername)) {
+                if (userRepository.existsByUsername(username)) {
                         throw new IllegalArgumentException(
                                         "Username is already taken");
                 }
@@ -52,9 +51,9 @@ public class CustomerService {
                                 AccountType.SAVINGS);
 
                 User customer = new User(
-                                cleanedUsername,
+                                username,
                                 passwordEncoder.encode(password),
-                                "customer",
+                                UserType.CUSTOMER,
                                 checkingAccount,
                                 savingsAccount);
 
@@ -76,7 +75,7 @@ public class CustomerService {
                                                 "Customer not found: "
                                                                 + cleanedUsername));
 
-                if (!user.getUserType().equalsIgnoreCase("customer")) {
+                if (user.getUserType() == UserType.ADMIN) {
                         throw new IllegalArgumentException(
                                         "The requested user is not a customer");
                 }
@@ -94,8 +93,7 @@ public class CustomerService {
                                 .findAll()
                                 .stream()
                                 .filter(user -> user.getUserType() != null
-                                                && user.getUserType()
-                                                                .equalsIgnoreCase("customer"))
+                                                && user.getUserType() == UserType.CUSTOMER)
                                 .toList();
         }
 

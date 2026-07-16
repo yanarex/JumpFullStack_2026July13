@@ -2,31 +2,23 @@ package com.bank.bankapi.dto;
 
 import com.bank.bankapi.model.UserType;
 
-public class LoginResponse {
+public class AuthenticationResponse {
 
-    private boolean success;
-    private String message;
+    private String token;
     private String username;
     private UserType userType;
 
-    public LoginResponse(
-            boolean success,
-            String message,
+    public AuthenticationResponse(
+            String token,
             String username,
             UserType userType) {
-
-        this.success = success;
-        this.message = message;
+        this.token = token;
         this.username = username;
         this.userType = userType;
     }
 
-    public boolean isSuccess() {
-        return success;
-    }
-
-    public String getMessage() {
-        return message;
+    public String getToken() {
+        return token;
     }
 
     public String getUsername() {

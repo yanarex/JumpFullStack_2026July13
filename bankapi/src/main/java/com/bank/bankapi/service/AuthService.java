@@ -1,8 +1,8 @@
 package com.bank.bankapi.service;
 
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import com.bank.bankapi.config.AppConfig.PasswordEncoder;
 import com.bank.bankapi.dto.LoginResponse;
 import com.bank.bankapi.model.User;
 import com.bank.bankapi.repository.UserRepository;
