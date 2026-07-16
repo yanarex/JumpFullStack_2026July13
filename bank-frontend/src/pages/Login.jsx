@@ -15,9 +15,10 @@ export default function Login({ onLogin }) {
 
     try {
       const response = await DataService.login(form.username, form.password);
-      onLogin({
-        username: response?.username || form.username,
-        userType: response?.userType || response?.role || "CUSTOMER",
+      onLogin ({
+      username: response?.username || form.username, userType:
+      response?.userType || response?.role || "CUSTOMER",
+      token: response?.token,
       });
     } catch (err) {
       setError(err.message);

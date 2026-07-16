@@ -9,31 +9,58 @@ const currency = new Intl.NumberFormat("en-US", {
 
 export default function AdminDashboard({ session }) {
   const [customers, setCustomers] = useState([]);
-  const [form, setForm] = useState({ username: "", password: "" });
+  const [form, setForm] = useState({username: "", password: "", userType: "CUSTOMER", });
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
-  async function refresh() {
-    setCustomers(await DataService.getCustomers());
-  }
+  async function refreshCustomers() {
+  const customerData = await DataService.getCustomers();
+  setCustomers(customerData);
+}
 
-  useEffect(() => {
-    refresh().catch((err) => setError(err.message));
-  }, []);
-
-  async function createCustomer(event) {
-    event.preventDefault();
-    setMessage("");
-    setError("");
+useEffect(() => {
+  async function loadCustomers() {
     try {
-      await DataService.createCustomer(form.username, form.password);
-      setForm({ username: "", password: "" });
-      setMessage("Customer created.");
-      await refresh();
+      const customerData = await DataService.getCustomers();
+      setCustomers(customerData);
     } catch (err) {
       setError(err.message);
     }
   }
+
+  loadCustomers();
+}, []);
+
+  async function createUser(event) {
+  event.preventDefault();
+  setMessage("");
+  setError("");
+
+  try {
+    await DataService.createUserAsAdmin(
+      form.username,
+      form.password,
+      form.userType
+    );
+    
+    setMessage(
+      form.userType === "ADMIN"
+        ? "Admin created."
+        : "Customer created."
+    );
+
+    setForm({
+      username: "",
+      password: "",
+      userType: "CUSTOMER",
+    });
+
+
+    await refreshCustomers();
+  } catch (err) {
+    setError(err.message);
+  }
+}
 
   async function deleteCustomer(username) {
     if (!window.confirm(`Delete customer ${username}?`)) return;
@@ -42,7 +69,7 @@ export default function AdminDashboard({ session }) {
     try {
       await DataService.deleteCustomer(username);
       setMessage("Customer deleted.");
-      await refresh();
+      await refreshCustomers();
     } catch (err) {
       setError(err.message);
     }
@@ -62,19 +89,23 @@ export default function AdminDashboard({ session }) {
         <Message>{message}</Message>
         <Message type="error">{error}</Message>
 
-        <form className="form-card admin-create" onSubmit={createCustomer}>
-          <h2>Create customer</h2>
+        <form className="form-card admin-create" onSubmit={createUser}>
+          <h2>Create account</h2>
           <div className="form-two-column">
             <label>
-              Username
-              <input
-                required
-                value={form.username}
-                onChange={(event) =>
-                  setForm({ ...form, username: event.target.value })
-                }
-              />
-            </label>
+            User type
+            <select
+            value={form.userType}
+            onChange={(event) =>
+            setForm({
+            ...form,
+            userType: event.target.value,
+            })
+            }>
+          <option value="CUSTOMER">Customer</option>
+          <option value="ADMIN">Admin</option>
+          </select>
+          </label>
             <label>
               Temporary password
               <input
@@ -87,7 +118,7 @@ export default function AdminDashboard({ session }) {
               />
             </label>
           </div>
-          <button className="button primary">Create customer</button>
+          <button className="button primary">Create account</button>
         </form>
 
         <section className="table-card">
