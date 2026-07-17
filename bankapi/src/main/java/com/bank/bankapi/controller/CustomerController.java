@@ -4,12 +4,14 @@ import java.util.List;
 import java.util.Map;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import com.bank.bankapi.dto.AdminTransferRequest;
 import com.bank.bankapi.dto.AmountRequest;
 import com.bank.bankapi.dto.CreateCustomerRequest;
-import com.bank.bankapi.dto.TransferRequest;
+import com.bank.bankapi.dto.ExternalTransferRequest;
+import com.bank.bankapi.model.Transaction;
 import com.bank.bankapi.dto.UpdateAccountIdRequest;
 import com.bank.bankapi.model.AccountType;
 import com.bank.bankapi.model.User;
@@ -132,7 +134,7 @@ public class CustomerController {
         @PostMapping("/{username}/transfer")
         public User transfer(
                         @PathVariable String username,
-                        @Valid @RequestBody TransferRequest request) {
+                        @Valid @RequestBody ExternalTransferRequest request) {
 
                 return customerService.transfer(
                                 username,
@@ -148,28 +150,16 @@ public class CustomerController {
          *
          * POST /api/customers/transfer-between-customers
          */
-        @PostMapping("/transfer-between-customers")
-        public Map<String, Object> transferBetweenCustomers(
-                        @Valid @RequestBody AdminTransferRequest request) {
+        @PostMapping("/{username}/transfer-to-customer")
+        public User transferToCustomer(
+                @PathVariable String username,
+                @Valid @RequestBody ExternalTransferRequest request) {
 
-                customerService.transferBetweenCustomers(
-                                request.getFromUsername(),
-                                request.getToUsername(),
-                                request.getFromAccount(),
-                                request.getToAccount(),
-                                request.getAmount());
-
-                return Map.of(
-                                "message",
-                                "Transfer completed successfully",
-                                "fromUsername",
-                                request.getFromUsername(),
-                                "toUsername",
-                                request.getToUsername(),
-                                "amount",
-                                request.getAmount());
+        return customerService.transferToAnotherCustomer(
+                username,
+                request
+        );
         }
-
         /*
          * Updates the generated ID of an account.
          *
@@ -185,5 +175,24 @@ public class CustomerController {
                                 username,
                                 accountType,
                                 request.getNewId());
+        }
+        
+        @GetMapping("/{username}/transactions")
+        public ResponseEntity<List<Transaction>> getTransactions(
+        @PathVariable String username) {
+
+        return ResponseEntity.ok(
+                customerService.getTransactions(username));
+        }
+        
+        @PostMapping("/{username}/external-transfer")
+        public ResponseEntity<User> externalTransfer(
+                        @PathVariable String username,
+                        @RequestBody ExternalTransferRequest request) {
+
+                return ResponseEntity.ok(
+                                customerService.transferToAnotherCustomer(
+                                                username,
+                                                request));
         }
 }

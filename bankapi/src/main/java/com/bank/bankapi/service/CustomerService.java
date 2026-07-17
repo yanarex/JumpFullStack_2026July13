@@ -1,6 +1,7 @@
 package com.bank.bankapi.service;
 
 import java.math.BigDecimal;
+import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -10,6 +11,9 @@ import org.springframework.stereotype.Service;
 import com.bank.bankapi.model.Account;
 import com.bank.bankapi.model.AccountType;
 import com.bank.bankapi.model.User;
+import com.bank.bankapi.model.Transaction;
+import com.bank.bankapi.dto.ExternalTransferRequest;
+import com.bank.bankapi.model.TransactionType;
 import com.bank.bankapi.model.UserType;
 import com.bank.bankapi.repository.UserRepository;
 
@@ -108,12 +112,25 @@ public class CustomerService {
                 validateAmount(amount);
 
                 User customer = getCustomer(username);
+
                 Account account = selectAccount(
                                 customer,
                                 accountType);
 
-                account.setBalance(
-                                account.getBalance().add(amount));
+                BigDecimal updatedBalance = account.getBalance().add(amount);
+
+                account.setBalance(updatedBalance);
+
+                Transaction transaction = new Transaction(
+                                TransactionType.DEPOSIT,
+                                accountType,
+                                amount,
+                                updatedBalance,
+                                "Deposit",
+                                null,
+                                null);
+
+                customer.addTransaction(transaction);
 
                 return userRepository.save(customer);
         }
@@ -129,6 +146,7 @@ public class CustomerService {
                 validateAmount(amount);
 
                 User customer = getCustomer(username);
+
                 Account account = selectAccount(
                                 customer,
                                 accountType);
@@ -140,8 +158,20 @@ public class CustomerService {
                                                         + " account");
                 }
 
-                account.setBalance(
-                                account.getBalance().subtract(amount));
+                BigDecimal updatedBalance = account.getBalance().subtract(amount);
+
+                account.setBalance(updatedBalance);
+
+                Transaction transaction = new Transaction(
+                                TransactionType.WITHDRAWAL,
+                                accountType,
+                                amount.negate(),
+                                updatedBalance,
+                                "Withdrawal",
+                                null,
+                                null);
+
+                customer.addTransaction(transaction);
 
                 return userRepository.save(customer);
         }
@@ -192,79 +222,66 @@ public class CustomerService {
          * The source and destination account types can each be
          * CHECKING or SAVINGS.
          */
-        public void transferBetweenCustomers(
-                        String fromUsername,
-                        String toUsername,
-                        AccountType fromAccountType,
-                        AccountType toAccountType,
-                        BigDecimal amount) {
+        public User transferToAnotherCustomer(
+                        String senderUsername,
+                        ExternalTransferRequest request) {
 
-                validateAmount(amount);
+                validateAmount(request.getAmount());
 
-                String cleanedFromUsername = cleanUsername(fromUsername);
+                User sender = getCustomer(senderUsername);
 
-                String cleanedToUsername = cleanUsername(toUsername);
+                User recipient = userRepository
+                                .findByAccountId(request.getDestinationAccountId())
+                                .orElseThrow(() -> new IllegalArgumentException(
+                                                "Destination Account Was Not Found"));
 
-                User sourceCustomer = getCustomer(cleanedFromUsername);
-
-                User destinationCustomer = getCustomer(cleanedToUsername);
-
-                Account sourceAccount = selectAccount(
-                                sourceCustomer,
-                                fromAccountType);
-
-                Account destinationAccount = selectAccount(
-                                destinationCustomer,
-                                toAccountType);
-
-                /*
-                 * Prevent transferring from an account
-                 * directly back into the same account.
-                 */
-                boolean sameCustomer = cleanedFromUsername.equals(
-                                cleanedToUsername);
-
-                boolean sameAccountType = fromAccountType == toAccountType;
-
-                if (sameCustomer && sameAccountType) {
+                if (sender.getUsername().equals(recipient.getUsername())) {
                         throw new IllegalArgumentException(
-                                        "Source and destination cannot be the same account");
+                                        "You Cannot Transfer Money To Your Own Account");
                 }
 
-                if (amount.compareTo(
-                                sourceAccount.getBalance()) > 0) {
+                Account senderAccount = selectAccount(
+                                sender,
+                                request.getFromAccountType());
 
+                if (request.getAmount().compareTo(senderAccount.getBalance()) > 0) {
                         throw new IllegalArgumentException(
-                                        "Insufficient balance in "
-                                                        + cleanedFromUsername
-                                                        + "'s "
-                                                        + fromAccountType
-                                                        + " account");
+                                        "Insufficient Balance");
                 }
 
-                sourceAccount.setBalance(
-                                sourceAccount.getBalance()
-                                                .subtract(amount));
+                Account recipientAccount = findAccountById(
+                                recipient,
+                                request.getDestinationAccountId());
 
-                destinationAccount.setBalance(
-                                destinationAccount.getBalance()
-                                                .add(amount));
+                senderAccount.setBalance(
+                                senderAccount.getBalance().subtract(request.getAmount()));
 
-                /*
-                 * When both accounts belong to the same customer,
-                 * save that customer once.
-                 */
-                if (sameCustomer) {
-                        userRepository.save(sourceCustomer);
-                        return;
-                }
+                recipientAccount.setBalance(
+                                recipientAccount.getBalance().add(request.getAmount()));
 
-                /*
-                 * When the accounts belong to different customers,
-                 * save both modified customer documents.
-                 */
-                userRepository.save(sourceCustomer);
-                userRepository.save(destinationCustomer);
+                sender.addTransaction(
+                                new Transaction(
+                                                TransactionType.TRANSFER_SENT,
+                                                request.getFromAccountType(),
+                                                request.getAmount().negate(),
+                                                senderAccount.getBalance(),
+                                                "Transfer To " + recipient.getUsername(),
+                                                recipient.getUsername(),
+                                                request.getDestinationAccountId()));
+
+                recipient.addTransaction(
+                                new Transaction(
+                                                TransactionType.TRANSFER_RECEIVED,
+                                                recipientAccount.getAccountType(),
+                                                request.getAmount(),
+                                                recipientAccount.getBalance(),
+                                                "Transfer From " + sender.getUsername(),
+                                                sender.getUsername(),
+                                                senderAccount.getId()));
+
+                userRepository.save(recipient);
+
+                return userRepository.save(sender);
         }
 
         /*
@@ -331,6 +348,19 @@ public class CustomerService {
                 };
         }
 
+        private Account findAccountById(User user, int accountId) {
+                if (user.getCheckingAccount().getId() == accountId) {
+                        return user.getCheckingAccount();
+                }
+
+                if (user.getSavingsAccount().getId() == accountId) {
+                        return user.getSavingsAccount();
+                }
+
+                throw new IllegalArgumentException(
+                                "Destination Account Was Not Found");
+        }
+
         /*
          * Generates a unique five-digit account ID.
          */
@@ -341,7 +371,7 @@ public class CustomerService {
                 do {
                         generatedId = ThreadLocalRandom
                                         .current()
-                                        .nextInt(10000, 100000);
+                                        .nextInt(1000000000, 1000000000);
 
                 } while (userRepository.accountIdExists(
                                 generatedId));
@@ -378,6 +408,21 @@ public class CustomerService {
                         throw new IllegalArgumentException(
                                         "Amount must be greater than zero");
                 }
+        }
+
+        public List<Transaction> getTransactions(String username) {
+                User customer = getCustomer(username);
+
+                if (customer.getTransactions() == null) {
+                        return List.of();
+                }
+
+                return customer.getTransactions()
+                                .stream()
+                                .sorted(
+                                                Comparator.comparing(Transaction::getCreatedAt)
+                                                                .reversed())
+                                .toList();
         }
 
         /*

@@ -1,5 +1,8 @@
 package com.bank.bankapi.model;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -23,6 +26,8 @@ public class User {
 
     private Account checkingAccount;
     private Account savingsAccount;
+
+    private List<Transaction> transactions = new ArrayList<>();
 
     public User() {
         // Required by Spring Data MongoDB
@@ -88,5 +93,23 @@ public class User {
 
     public void setSavingsAccount(Account savingsAccount) {
         this.savingsAccount = savingsAccount;
+    }
+
+    public List<Transaction> getTransactions() {
+        return transactions;
+    }
+
+    public void setTransactions(List<Transaction> transactions) {
+        this.transactions = transactions == null
+                ? new ArrayList<>()
+                : transactions;
+}
+
+    public void addTransaction(Transaction transaction) {
+        if (transactions == null) {
+            transactions = new ArrayList<>();
+        }
+
+        transactions.add(transaction);
     }
 }
