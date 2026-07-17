@@ -21,7 +21,7 @@ export default function Footer() {
 
         <div>
           <h3>Online banking</h3>
-          <Link to="/login">Sign on</Link>
+          <Link to="/login">Log in</Link>
           <span>Account overview</span>
           <span>Transfers</span>
         </div>

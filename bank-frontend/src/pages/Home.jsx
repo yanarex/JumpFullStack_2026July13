@@ -7,7 +7,7 @@ export default function Home() {
         <div className="page-width hero-grid">
           <div className="hero-copy">
             <p className="eyebrow">BANKING MADE SIMPLE</p>
-            <h1>Manage your money with confidence.</h1>
+            <h1>Manage Your Money With Confidence.</h1>
             <p className="hero-text">
               View balances, move funds, and manage everyday accounts through
               one clear online banking experience.
@@ -24,13 +24,13 @@ export default function Home() {
 
           <div className="hero-panel">
             <div className="hero-panel-header">
-              <span>Jump Bank checking</span>
+              <span>Jump Bank Checking</span>
               <span className="mini-pill">Online</span>
             </div>
             <p>Everyday banking without the clutter.</p>
             <div className="mock-balance">
               <span>Available balance</span>
-              <strong>$4,825.40</strong>
+              <strong>$1,738.69</strong>
             </div>
             <div className="mock-actions">
               <span>Deposit</span>
@@ -45,17 +45,17 @@ export default function Home() {
         <div className="page-width three-column">
           <article>
             <span className="feature-icon">01</span>
-            <h2>Checking accounts</h2>
+            <h2>Checking Accounts</h2>
             <p>Access balances and complete everyday banking transactions.</p>
           </article>
           <article>
             <span className="feature-icon">02</span>
-            <h2>Savings accounts</h2>
+            <h2>Savings Accounts</h2>
             <p>Keep savings separate while maintaining instant visibility.</p>
           </article>
           <article>
             <span className="feature-icon">03</span>
-            <h2>Online transfers</h2>
+            <h2>Online Transfers</h2>
             <p>Move money between accounts or send it to another customer.</p>
           </article>
         </div>

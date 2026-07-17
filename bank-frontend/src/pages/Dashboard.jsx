@@ -1,61 +1,113 @@
-import { useEffect, useMemo, useState } from "react";
+/* eslint-disable react-hooks/set-state-in-effect */
+import {
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
+
+import { useNavigate } from "react-router-dom";
+
 import DataService from "../api/DataService";
 import AccountCard from "../components/AccountCard";
 import Message from "../components/Message";
 
-const ACCOUNT_TYPES = ["CHECKING", "SAVINGS"];
-const currency = new Intl.NumberFormat("en-US", {
-  style: "currency",
-  currency: "USD",
-});
+const ACCOUNT_TYPES = [
+  "CHECKING",
+  "SAVINGS",
+];
 
-export default function Dashboard({ session }) {
-  const [customer, setCustomer] = useState(null);
-  const [view, setView] = useState("overview");
-  const [selectedAccount, setSelectedAccount] = useState("CHECKING");
-  const [amount, setAmount] = useState("");
-  const [transfer, setTransfer] = useState({
-    fromAccountType: "CHECKING",
-    amount: "",
-  });
-  const [send, setSend] = useState({
-    toUsername: "",
-    fromAccount: "CHECKING",
-    toAccount: "CHECKING",
-    amount: "",
-  });
-  const [accountId, setAccountId] = useState({
-    accountType: "CHECKING",
-    newId: "",
-  });
-  const [message, setMessage] = useState("");
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
+const currency = new Intl.NumberFormat(
+  "en-US",
+  {
+    style: "currency",
+    currency: "USD",
+  }
+);
+
+export default function Dashboard({
+  session,
+}) {
+  const navigate = useNavigate();
+
+  const [customer, setCustomer] =
+    useState(null);
+
+  const [view, setView] =
+    useState("overview");
+
+  const [
+    selectedAccountType,
+    setSelectedAccountType,
+  ] = useState("CHECKING");
+
+  const [amount, setAmount] =
+    useState("");
+
+  const [ownTransfer, setOwnTransfer] =
+    useState({
+      fromAccountType: "CHECKING",
+      amount: "",
+    });
+
+  const [externalTransfer, setExternalTransfer] =
+    useState({
+      fromAccountType: "CHECKING",
+      destinationAccountId: "",
+      amount: "",
+    });
+
+  const [message, setMessage] =
+    useState("");
+
+  const [error, setError] =
+    useState("");
+
+  const [loading, setLoading] =
+    useState(false);
 
   async function refresh() {
-    const data = await DataService.getCustomer(session.username);
-    setCustomer(data);
+    const customerData =
+      await DataService.getCustomer(
+        session.username
+      );
+
+    setCustomer(customerData);
   }
 
   useEffect(() => {
-    refresh().catch((err) => setError(err.message));
+    refresh().catch((err) => {
+      setError(err.message);
+    });
   }, [session.username]);
 
-  const total = useMemo(
-    () =>
-      Number(customer?.checkingAccount?.balance || 0) +
-      Number(customer?.savingsAccount?.balance || 0),
-    [customer]
-  );
+  const totalBalance = useMemo(() => {
+    const checkingBalance = Number(
+      customer?.checkingAccount?.balance || 0
+    );
 
-  async function run(action, successText) {
+    const savingsBalance = Number(
+      customer?.savingsAccount?.balance || 0
+    );
+
+    return (
+      checkingBalance + savingsBalance
+    );
+  }, [customer]);
+
+  async function runTransaction(
+    action,
+    successMessage
+  ) {
     setLoading(true);
     setMessage("");
     setError("");
+
     try {
       await action();
       await refresh();
-      setMessage(successText);
+
+      setMessage(successMessage);
+      setView("overview");
     } catch (err) {
       setError(err.message);
     } finally {
@@ -63,283 +115,476 @@ export default function Dashboard({ session }) {
     }
   }
 
-  function openMoneyView(nextView, accountType) {
-    setSelectedAccount(accountType);
+  function openAccountForm(
+    nextView,
+    accountType
+  ) {
+    setSelectedAccountType(accountType);
     setAmount("");
-    setView(nextView);
     setMessage("");
     setError("");
+    setView(nextView);
+  }
+
+  if (!customer && !error) {
+    return (
+      <main className="dashboard-page">
+        <div className="loading-panel">
+          <span className="loading-spinner" />
+          Loading your accounts...
+        </div>
+      </main>
+    );
   }
 
   return (
-    <main className="dashboard-main">
-      <div className="page-width dashboard-layout">
-        <aside className="dashboard-sidebar">
-          <span className="sidebar-label">ONLINE BANKING</span>
-          {[
-            ["overview", "Account overview"],
-            ["transfer", "Transfer funds"],
-            ["send", "Send money"],
-            ["settings", "Account settings"],
-          ].map(([key, label]) => (
-            <button
-              key={key}
-              className={view === key ? "active" : ""}
-              onClick={() => setView(key)}
-            >
-              {label}
-            </button>
-          ))}
-        </aside>
+    <main className="dashboard-page">
+      <aside className="dashboard-sidebar">
+        <p className="eyebrow">
+          Online Banking
+        </p>
 
-        <section className="dashboard-content">
-          <div className="dashboard-heading">
-            <div>
-              <p className="eyebrow">WELCOME BACK</p>
-              <h1>Hello, {session.username}</h1>
-            </div>
-            <div className="total-balance">
-              <span>Total balance</span>
-              <strong>{currency.format(total)}</strong>
-            </div>
+        <button
+          type="button"
+          onClick={() =>
+            setView("overview")
+          }
+        >
+          Account Overview
+        </button>
+
+        <button
+          type="button"
+          onClick={() =>
+            setView("own-transfer")
+          }
+        >
+          Transfer Between Accounts
+        </button>
+
+        <button
+          type="button"
+          onClick={() =>
+            setView("external-transfer")
+          }
+        >
+          Send Money
+        </button>
+
+        <button
+          type="button"
+          onClick={() =>
+            navigate("/transactions")
+          }
+        >
+          Transaction History
+        </button>
+      </aside>
+
+      <section className="dashboard-content">
+        <div className="dashboard-heading">
+          <div>
+            <p className="eyebrow">
+              Welcome Back
+            </p>
+
+            <h1>
+              Hello, {session.username}
+            </h1>
           </div>
 
-          <Message>{message}</Message>
-          <Message type="error">{error}</Message>
+          <div className="total-balance">
+            <span>Total Balance</span>
 
-          {view === "overview" && (
-            <>
-              <h2>Your accounts</h2>
-              <div className="account-grid">
-                <AccountCard
-                  name="Checking"
-                  account={customer?.checkingAccount}
-                  onDeposit={() => openMoneyView("deposit", "CHECKING")}
-                  onWithdraw={() => openMoneyView("withdraw", "CHECKING")}
-                />
-                <AccountCard
-                  name="Savings"
-                  account={customer?.savingsAccount}
-                  onDeposit={() => openMoneyView("deposit", "SAVINGS")}
-                  onWithdraw={() => openMoneyView("withdraw", "SAVINGS")}
-                />
-              </div>
-            </>
-          )}
+            <strong>
+              {currency.format(
+                totalBalance
+              )}
+            </strong>
+          </div>
+        </div>
 
-          {(view === "deposit" || view === "withdraw") && (
-            <form
-              className="form-card dashboard-form"
-              onSubmit={(event) => {
-                event.preventDefault();
-                run(
-                  () =>
-                    view === "deposit"
-                      ? DataService.deposit(session.username, selectedAccount, amount)
-                      : DataService.withdraw(session.username, selectedAccount, amount),
-                  `${view === "deposit" ? "Deposit" : "Withdrawal"} completed.`
-                ).then(() => setAmount(""));
-              }}
-            >
-              <h2>
-                {view === "deposit" ? "Deposit to" : "Withdraw from"}{" "}
-                {selectedAccount.toLowerCase()}
-              </h2>
-              <label>
-                Amount
-                <input
-                  required
-                  type="number"
-                  min="0.01"
-                  step="0.01"
-                  value={amount}
-                  onChange={(event) => setAmount(event.target.value)}
-                />
-              </label>
-              <button className="button primary" disabled={loading}>
-                {loading ? "Processing..." : "Submit"}
+        <Message type="success">
+          {message}
+        </Message>
+
+        <Message type="error">
+          {error}
+        </Message>
+
+        {view === "overview" && customer && (
+          <div className="account-grid">
+            <AccountCard
+              name="Checking"
+              account={
+                customer.checkingAccount
+              }
+              onDeposit={() =>
+                openAccountForm(
+                  "deposit",
+                  "CHECKING"
+                )
+              }
+              onWithdraw={() =>
+                openAccountForm(
+                  "withdraw",
+                  "CHECKING"
+                )
+              }
+              onTransfer={() =>
+                setView(
+                  "external-transfer"
+                )
+              }
+              onTransactions={() =>
+                navigate(
+                  "/transactions?accountType=CHECKING"
+                )
+              }
+            />
+
+            <AccountCard
+              name="Savings"
+              account={
+                customer.savingsAccount
+              }
+              onDeposit={() =>
+                openAccountForm(
+                  "deposit",
+                  "SAVINGS"
+                )
+              }
+              onWithdraw={() =>
+                openAccountForm(
+                  "withdraw",
+                  "SAVINGS"
+                )
+              }
+              onTransfer={() =>
+                setView(
+                  "external-transfer"
+                )
+              }
+              onTransactions={() =>
+                navigate(
+                  "/transactions?accountType=SAVINGS"
+                )
+              }
+            />
+          </div>
+        )}
+
+        {(view === "deposit" ||
+          view === "withdraw") && (
+          <form
+            className="bank-form"
+            onSubmit={(event) => {
+              event.preventDefault();
+
+              runTransaction(
+                () =>
+                  view === "deposit"
+                    ? DataService.deposit(
+                        session.username,
+                        selectedAccountType,
+                        amount
+                      )
+                    : DataService.withdraw(
+                        session.username,
+                        selectedAccountType,
+                        amount
+                      ),
+                view === "deposit"
+                  ? "Deposit completed."
+                  : "Withdrawal completed."
+              );
+            }}
+          >
+            <h2>
+              {view === "deposit"
+                ? "Deposit Into"
+                : "Withdraw From"}{" "}
+              {selectedAccountType ===
+              "CHECKING"
+                ? "Checking"
+                : "Savings"}{" "}
+              Account
+            </h2>
+
+            <label htmlFor="money-amount">
+              Amount
+            </label>
+
+            <input
+              id="money-amount"
+              type="number"
+              min="0.01"
+              step="0.01"
+              value={amount}
+              onChange={(event) =>
+                setAmount(
+                  event.target.value
+                )
+              }
+              required
+            />
+
+            <div className="form-actions">
+              <button
+                type="button"
+                className="secondary-button"
+                onClick={() =>
+                  setView("overview")
+                }
+                disabled={loading}
+              >
+                Back
               </button>
-            </form>
-          )}
 
-          {view === "transfer" && (
-            <form
-              className="form-card dashboard-form"
-              onSubmit={(event) => {
-                event.preventDefault();
-                run(
-                  () =>
-                    DataService.transferOwnAccounts(
-                      session.username,
-                      transfer.fromAccountType,
-                      transfer.amount
-                    ),
-                  "Transfer completed."
-                ).then(() => setTransfer({ ...transfer, amount: "" }));
-              }}
-            >
-              <h2>Transfer between your accounts</h2>
-              <label>
-                Transfer from
-                <select
-                  value={transfer.fromAccountType}
-                  onChange={(event) =>
-                    setTransfer({
-                      ...transfer,
-                      fromAccountType: event.target.value,
-                    })
-                  }
-                >
-                  {ACCOUNT_TYPES.map((type) => (
-                    <option key={type}>{type}</option>
-                  ))}
-                </select>
-              </label>
-              <label>
-                Amount
-                <input
-                  required
-                  type="number"
-                  min="0.01"
-                  step="0.01"
-                  value={transfer.amount}
-                  onChange={(event) =>
-                    setTransfer({ ...transfer, amount: event.target.value })
-                  }
-                />
-              </label>
-              <button className="button primary" disabled={loading}>
-                Transfer funds
+              <button
+                type="submit"
+                className="primary-button"
+                disabled={loading}
+              >
+                {loading && (
+                  <span className="button-spinner" />
+                )}
+
+                {loading
+                  ? "Processing..."
+                  : "Submit"}
               </button>
-            </form>
-          )}
+            </div>
+          </form>
+        )}
 
-          {view === "send" && (
-            <form
-              className="form-card dashboard-form"
-              onSubmit={(event) => {
-                event.preventDefault();
-                run(
-                  () =>
-                    DataService.transferBetweenCustomers({
-                      fromUsername: session.username,
-                      ...send,
-                    }),
-                  "Money sent successfully."
-                ).then(() =>
-                  setSend({ ...send, toUsername: "", amount: "" })
-                );
-              }}
+        {view === "own-transfer" && (
+          <form
+            className="bank-form"
+            onSubmit={(event) => {
+              event.preventDefault();
+
+              runTransaction(
+                () =>
+                  DataService.transferOwnAccounts(
+                    session.username,
+                    ownTransfer.fromAccountType,
+                    ownTransfer.amount
+                  ),
+                "Transfer completed."
+              );
+            }}
+          >
+            <h2>
+              Transfer Between Your Accounts
+            </h2>
+
+            <label htmlFor="own-transfer-from">
+              Transfer From
+            </label>
+
+            <select
+              id="own-transfer-from"
+              value={
+                ownTransfer.fromAccountType
+              }
+              onChange={(event) =>
+                setOwnTransfer({
+                  ...ownTransfer,
+                  fromAccountType:
+                    event.target.value,
+                })
+              }
             >
-              <h2>Send money to another customer</h2>
-              <div className="form-two-column">
-                <label>
-                  Recipient username
-                  <input
-                    required
-                    value={send.toUsername}
-                    onChange={(event) =>
-                      setSend({ ...send, toUsername: event.target.value })
-                    }
-                  />
-                </label>
-                <label>
-                  Amount
-                  <input
-                    required
-                    type="number"
-                    min="0.01"
-                    step="0.01"
-                    value={send.amount}
-                    onChange={(event) =>
-                      setSend({ ...send, amount: event.target.value })
-                    }
-                  />
-                </label>
-                <label>
-                  From account
-                  <select
-                    value={send.fromAccount}
-                    onChange={(event) =>
-                      setSend({ ...send, fromAccount: event.target.value })
-                    }
+              {ACCOUNT_TYPES.map(
+                (accountType) => (
+                  <option
+                    key={accountType}
+                    value={accountType}
                   >
-                    {ACCOUNT_TYPES.map((type) => (
-                      <option key={type}>{type}</option>
-                    ))}
-                  </select>
-                </label>
-                <label>
-                  Recipient account
-                  <select
-                    value={send.toAccount}
-                    onChange={(event) =>
-                      setSend({ ...send, toAccount: event.target.value })
-                    }
-                  >
-                    {ACCOUNT_TYPES.map((type) => (
-                      <option key={type}>{type}</option>
-                    ))}
-                  </select>
-                </label>
-              </div>
-              <button className="button primary" disabled={loading}>
-                Send money
-              </button>
-            </form>
-          )}
+                    {accountType ===
+                    "CHECKING"
+                      ? "Checking"
+                      : "Savings"}
+                  </option>
+                )
+              )}
+            </select>
 
-          {view === "settings" && (
-            <form
-              className="form-card dashboard-form"
-              onSubmit={(event) => {
-                event.preventDefault();
-                run(
-                  () =>
-                    DataService.updateAccountId(
-                      session.username,
-                      accountId.accountType,
-                      accountId.newId
-                    ),
-                  "Account ID updated."
-                ).then(() => setAccountId({ ...accountId, newId: "" }));
-              }}
-            >
-              <h2>Update account ID</h2>
-              <label>
-                Account
-                <select
-                  value={accountId.accountType}
-                  onChange={(event) =>
-                    setAccountId({
-                      ...accountId,
-                      accountType: event.target.value,
-                    })
-                  }
-                >
-                  {ACCOUNT_TYPES.map((type) => (
-                    <option key={type}>{type}</option>
-                  ))}
-                </select>
-              </label>
-              <label>
-                New numeric ID
-                <input
-                  required
-                  type="number"
-                  value={accountId.newId}
-                  onChange={(event) =>
-                    setAccountId({ ...accountId, newId: event.target.value })
-                  }
-                />
-              </label>
-              <button className="button primary" disabled={loading}>
-                Update account
+            <label htmlFor="own-transfer-amount">
+              Amount
+            </label>
+
+            <input
+              id="own-transfer-amount"
+              type="number"
+              min="0.01"
+              step="0.01"
+              value={ownTransfer.amount}
+              onChange={(event) =>
+                setOwnTransfer({
+                  ...ownTransfer,
+                  amount:
+                    event.target.value,
+                })
+              }
+              required
+            />
+
+            <div className="form-actions">
+              <button
+                type="button"
+                className="secondary-button"
+                onClick={() =>
+                  setView("overview")
+                }
+                disabled={loading}
+              >
+                Back
               </button>
-            </form>
-          )}
-        </section>
-      </div>
+
+              <button
+                type="submit"
+                className="primary-button"
+                disabled={loading}
+              >
+                {loading && (
+                  <span className="button-spinner" />
+                )}
+
+                {loading
+                  ? "Transferring..."
+                  : "Transfer Funds"}
+              </button>
+            </div>
+          </form>
+        )}
+
+        {view === "external-transfer" && (
+          <form
+            className="bank-form"
+            onSubmit={(event) => {
+              event.preventDefault();
+
+              runTransaction(
+                () =>
+                  DataService.transferToCustomer(
+                    session.username,
+                    externalTransfer.fromAccountType,
+                    externalTransfer.destinationAccountId,
+                    externalTransfer.amount
+                  ),
+                "Money sent successfully."
+              );
+            }}
+          >
+            <h2>
+              Send Money to Another Account
+            </h2>
+
+            <label htmlFor="external-transfer-from">
+              Transfer From
+            </label>
+
+            <select
+              id="external-transfer-from"
+              value={
+                externalTransfer.fromAccountType
+              }
+              onChange={(event) =>
+                setExternalTransfer({
+                  ...externalTransfer,
+                  fromAccountType:
+                    event.target.value,
+                })
+              }
+            >
+              {ACCOUNT_TYPES.map(
+                (accountType) => (
+                  <option
+                    key={accountType}
+                    value={accountType}
+                  >
+                    {accountType ===
+                    "CHECKING"
+                      ? "Checking"
+                      : "Savings"}
+                  </option>
+                )
+              )}
+            </select>
+
+            <label htmlFor="destination-account-id">
+              Destination Account Number
+            </label>
+
+            <input
+              id="destination-account-id"
+              type="number"
+              value={
+                externalTransfer.destinationAccountId
+              }
+              onChange={(event) =>
+                setExternalTransfer({
+                  ...externalTransfer,
+                  destinationAccountId:
+                    event.target.value,
+                })
+              }
+              required
+            />
+
+            <label htmlFor="external-transfer-amount">
+              Amount
+            </label>
+
+            <input
+              id="external-transfer-amount"
+              type="number"
+              min="0.01"
+              step="0.01"
+              value={
+                externalTransfer.amount
+              }
+              onChange={(event) =>
+                setExternalTransfer({
+                  ...externalTransfer,
+                  amount:
+                    event.target.value,
+                })
+              }
+              required
+            />
+
+            <div className="form-actions">
+              <button
+                type="button"
+                className="secondary-button"
+                onClick={() =>
+                  setView("overview")
+                }
+                disabled={loading}
+              >
+                Back
+              </button>
+
+              <button
+                type="submit"
+                className="primary-button"
+                disabled={loading}
+              >
+                {loading && (
+                  <span className="button-spinner" />
+                )}
+
+                {loading
+                  ? "Sending..."
+                  : "Send Money"}
+              </button>
+            </div>
+          </form>
+        )}
+      </section>
     </main>
   );
 }

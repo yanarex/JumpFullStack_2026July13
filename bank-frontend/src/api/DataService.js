@@ -1,16 +1,23 @@
 const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "http://localhost:8080";
+  import.meta.env.VITE_API_BASE_URL ||
+  "http://localhost:8080";
 
-function getSession() {
+function getStoredSession() {
   try {
-    return JSON.parse(localStorage.getItem("jump-bank-session"));
+    const storedSession = localStorage.getItem("bankSession");
+
+    if (!storedSession) {
+      return null;
+    }
+
+    return JSON.parse(storedSession);
   } catch {
     return null;
   }
 }
 
 async function request(path, options = {}) {
-  const session = getSession();
+  const session = getStoredSession();
   const token = session?.token;
 
   const headers = {
@@ -22,59 +29,77 @@ async function request(path, options = {}) {
     headers.Authorization = `Bearer ${token}`;
   }
 
-  const response = await fetch(
-    `${API_BASE_URL}${path}`,
-    {
+  let response;
+
+  try {
+    response = await fetch(`${API_BASE_URL}${path}`, {
       ...options,
       headers,
-    }
-  );
+    });
+  } catch {
+    throw new Error(
+      "Could not connect to the backend. Make sure Spring Boot is running on port 8080."
+    );
+  }
 
-  const text = await response.text();
+  const responseText = await response.text();
 
-  let data = null;
+  let responseData = null;
 
-  if (text) {
+  if (responseText) {
     try {
-      data = JSON.parse(text);
+      responseData = JSON.parse(responseText);
     } catch {
-      data = { message: text };
+      responseData = responseText;
     }
   }
 
   if (!response.ok) {
-    throw new Error(
-      data?.message ||
-        data?.error ||
-        `Request failed with status ${response.status}`
-    );
+    if (response.status === 401) {
+      throw new Error(
+        typeof responseData === "string"
+          ? responseData
+          : "Incorrect username or password"
+      );
+    }
+
+    if (response.status === 403) {
+      throw new Error(
+        "You do not have permission to perform this action."
+      );
+    }
+
+    const message =
+      responseData?.message ||
+      responseData?.error ||
+      (typeof responseData === "string"
+        ? responseData
+        : null) ||
+      `Request failed with status ${response.status}`;
+
+    throw new Error(message);
   }
 
-  return data;
+  return responseData;
 }
 
 const DataService = {
   login(username, password) {
     return request("/api/auth/login", {
       method: "POST",
-      body: JSON.stringify({ username, password }),
+      body: JSON.stringify({
+        username,
+        password,
+      }),
     });
   },
 
   createCustomer(username, password) {
     return request("/api/customers", {
       method: "POST",
-      body: JSON.stringify({ username, password }),
-    });
-  },
-
-  createUserAsAdmin(username, password, userType) {
-    return request("/api/admin/users", {
-      method: "POST",
       body: JSON.stringify({
         username,
         password,
-        userType,
       }),
     });
   },
@@ -87,15 +112,6 @@ const DataService = {
 
   getCustomers() {
     return request("/api/customers");
-  },
-
-  deleteCustomer(username) {
-    return request(
-      `/api/customers/${encodeURIComponent(username)}`,
-      {
-        method: "DELETE",
-      }
-    );
   },
 
   deposit(username, accountType, amount) {
@@ -126,9 +142,15 @@ const DataService = {
     );
   },
 
-  transferOwnAccounts(username, fromAccountType, amount) {
+  transferOwnAccounts(
+    username,
+    fromAccountType,
+    amount
+  ) {
     return request(
-      `/api/customers/${encodeURIComponent(username)}/transfer`,
+      `/api/customers/${encodeURIComponent(
+        username
+      )}/transfer`,
       {
         method: "POST",
         body: JSON.stringify({
@@ -139,26 +161,64 @@ const DataService = {
     );
   },
 
-  transferBetweenCustomers(payload) {
-    return request("/api/customers/transfer-between-customers", {
+  transferToCustomer(
+    username,
+    fromAccountType,
+    destinationAccountId,
+    amount
+  ) {
+    return request(
+      `/api/customers/${encodeURIComponent(
+        username
+      )}/transfer-to-customer`,
+      {
+        method: "POST",
+        body: JSON.stringify({
+          fromAccountType,
+          destinationAccountId:
+            Number(destinationAccountId),
+          amount: Number(amount),
+        }),
+      }
+    );
+  },
+
+  getTransactions(username) {
+    return request(
+      `/api/customers/${encodeURIComponent(
+        username
+      )}/transactions`
+    );
+  },
+
+  getAdminCustomerTransactions(username) {
+    return request(
+      `/api/admin/customers/${encodeURIComponent(
+        username
+      )}/transactions`
+    );
+  },
+
+  createUserAsAdmin(
+    username,
+    password,
+    userType
+  ) {
+    return request("/api/admin/users", {
       method: "POST",
       body: JSON.stringify({
-        ...payload,
-        amount: Number(payload.amount),
+        username,
+        password,
+        userType,
       }),
     });
   },
 
-  updateAccountId(username, accountType, newId) {
+  deleteCustomer(username) {
     return request(
-      `/api/customers/${encodeURIComponent(
-        username
-      )}/accounts/${accountType}/id`,
+      `/api/customers/${encodeURIComponent(username)}`,
       {
-        method: "PATCH",
-        body: JSON.stringify({
-          newId: Number(newId),
-        }),
+        method: "DELETE",
       }
     );
   },

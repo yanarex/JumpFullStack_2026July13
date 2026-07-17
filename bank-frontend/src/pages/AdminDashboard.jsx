@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import DataService from "../api/DataService";
 import Message from "../components/Message";
+import { useNavigate } from "react-router-dom";
+
 
 const currency = new Intl.NumberFormat("en-US", {
   style: "currency",
@@ -8,6 +10,7 @@ const currency = new Intl.NumberFormat("en-US", {
 });
 
 export default function AdminDashboard({ session }) {
+  const navigate = useNavigate();
   const [customers, setCustomers] = useState([]);
   const [form, setForm] = useState({username: "", password: "", userType: "CUSTOMER", });
   const [message, setMessage] = useState("");
@@ -82,7 +85,7 @@ useEffect(() => {
           <div>
             <p className="eyebrow">ADMINISTRATOR</p>
             <h1>Customer management</h1>
-            <p>Signed in as {session.username}</p>
+            <p>Logged in as {session.username}</p>
           </div>
         </div>
 
@@ -138,7 +141,14 @@ useEffect(() => {
               </thead>
               <tbody>
                 {customers.map((customer) => (
-                  <tr key={customer.username}>
+                  <tr
+                    key={customer.username}
+                    className="clickable-row"
+                    onClick={() =>
+                      navigate(
+                        `/admin/customers/${customer.username}/transactions`
+                      )
+                    }>
                     <td><strong>{customer.username}</strong></td>
                     <td>
                       {currency.format(
@@ -153,8 +163,9 @@ useEffect(() => {
                     <td>
                       <button
                         className="delete-button"
-                        onClick={() => deleteCustomer(customer.username)}
-                      >
+                        onClick={(event) => {
+                        event.stopPropagation();
+                        deleteCustomer(customer.username);}}>
                         Delete
                       </button>
                     </td>

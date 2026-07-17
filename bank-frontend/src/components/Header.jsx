@@ -55,7 +55,7 @@ export default function Header({ session, onLogout }) {
                   Create account
                 </NavLink>
                 <NavLink className="sign-on-link" to="/login" onClick={closeMenu}>
-                  Sign on
+                  Log in
                 </NavLink>
               </>
             )}

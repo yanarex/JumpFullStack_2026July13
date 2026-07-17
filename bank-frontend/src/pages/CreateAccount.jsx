@@ -27,7 +27,7 @@ export default function CreateAccount() {
     setLoading(true);
     try {
       await DataService.createCustomer(form.username, form.password);
-      setMessage("Your account was created. You can now sign on.");
+      setMessage("Your account was created. You can now log in.");
       setForm({ username: "", password: "", confirmPassword: "" });
     } catch (err) {
       setError(err.message);
