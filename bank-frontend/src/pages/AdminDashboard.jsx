@@ -1,8 +1,7 @@
 import { useEffect, useState } from "react";
 import DataService from "../api/DataService";
 import Message from "../components/Message";
-import { useNavigate } from "react-router-dom";
-
+import PasswordField from "../components/PasswordField";
 
 const currency = new Intl.NumberFormat("en-US", {
   style: "currency",
@@ -10,65 +9,66 @@ const currency = new Intl.NumberFormat("en-US", {
 });
 
 export default function AdminDashboard({ session }) {
-  const navigate = useNavigate();
   const [customers, setCustomers] = useState([]);
-  const [form, setForm] = useState({username: "", password: "", userType: "CUSTOMER", });
+  const [form, setForm] = useState({
+    username: "",
+    password: "",
+    userType: "CUSTOMER",
+  });
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
   async function refreshCustomers() {
-  const customerData = await DataService.getCustomers();
-  setCustomers(customerData);
-}
+    const customerData = await DataService.getCustomers();
+    setCustomers(customerData);
+  }
 
-useEffect(() => {
-  async function loadCustomers() {
+  useEffect(() => {
+    refreshCustomers().catch((err) => setError(err.message));
+  }, []);
+
+  async function createUser(event) {
+    event.preventDefault();
+    setMessage("");
+    setError("");
+    setLoading(true);
+
     try {
-      const customerData = await DataService.getCustomers();
-      setCustomers(customerData);
+      await DataService.createUserAsAdmin(
+        form.username.trim(),
+        form.password,
+        form.userType
+      );
+
+      setMessage(
+        form.userType === "ADMIN"
+          ? "Admin created successfully."
+          : "Customer created successfully."
+      );
+
+      setForm({
+        username: "",
+        password: "",
+        userType: "CUSTOMER",
+      });
+
+      await refreshCustomers();
     } catch (err) {
       setError(err.message);
+    } finally {
+      setLoading(false);
     }
   }
 
-  loadCustomers();
-}, []);
-
-  async function createUser(event) {
-  event.preventDefault();
-  setMessage("");
-  setError("");
-
-  try {
-    await DataService.createUserAsAdmin(
-      form.username,
-      form.password,
-      form.userType
-    );
-    
-    setMessage(
-      form.userType === "ADMIN"
-        ? "Admin created."
-        : "Customer created."
-    );
-
-    setForm({
-      username: "",
-      password: "",
-      userType: "CUSTOMER",
-    });
-
-
-    await refreshCustomers();
-  } catch (err) {
-    setError(err.message);
-  }
-}
-
   async function deleteCustomer(username) {
-    if (!window.confirm(`Delete customer ${username}?`)) return;
+    if (!window.confirm(`Delete customer ${username}?`)) {
+      return;
+    }
+
     setMessage("");
     setError("");
+
     try {
       await DataService.deleteCustomer(username);
       setMessage("Customer deleted.");
@@ -85,7 +85,7 @@ useEffect(() => {
           <div>
             <p className="eyebrow">ADMINISTRATOR</p>
             <h1>Customer management</h1>
-            <p>Logged in as {session.username}</p>
+            <p>Signed in as {session.username}</p>
           </div>
         </div>
 
@@ -94,34 +94,64 @@ useEffect(() => {
 
         <form className="form-card admin-create" onSubmit={createUser}>
           <h2>Create account</h2>
+          <p className="form-intro">
+            Create either a customer account or another administrator.
+          </p>
+
           <div className="form-two-column">
-            <label>
-            User type
-            <select
-            value={form.userType}
-            onChange={(event) =>
-            setForm({
-            ...form,
-            userType: event.target.value,
-            })
-            }>
-          <option value="CUSTOMER">Customer</option>
-          <option value="ADMIN">Admin</option>
-          </select>
-          </label>
-            <label>
-              Temporary password
+            <label className="form-field">
+              <span>Username</span>
               <input
                 required
-                type="password"
-                value={form.password}
+                minLength="3"
+                autoComplete="off"
+                value={form.username}
                 onChange={(event) =>
-                  setForm({ ...form, password: event.target.value })
+                  setForm({
+                    ...form,
+                    username: event.target.value,
+                  })
                 }
               />
             </label>
+
+            <label className="form-field">
+              <span>User type</span>
+              <select
+                value={form.userType}
+                onChange={(event) =>
+                  setForm({
+                    ...form,
+                    userType: event.target.value,
+                  })
+                }
+              >
+                <option value="CUSTOMER">Customer</option>
+                <option value="ADMIN">Admin</option>
+              </select>
+            </label>
           </div>
-          <button className="button primary">Create account</button>
+
+          <PasswordField
+            label="Temporary password"
+            minLength={5}
+            autoComplete="new-password"
+            value={form.password}
+            onChange={(event) =>
+              setForm({
+                ...form,
+                password: event.target.value,
+              })
+            }
+          />
+
+          <button
+            className="button primary"
+            disabled={loading}
+            type="submit"
+          >
+            {loading ? "Creating account..." : "Create account"}
+          </button>
         </form>
 
         <section className="table-card">
@@ -129,6 +159,7 @@ useEffect(() => {
             <h2>Customers</h2>
             <span>{customers.length} total</span>
           </div>
+
           <div className="table-scroll">
             <table>
               <thead>
@@ -139,17 +170,13 @@ useEffect(() => {
                   <th>Action</th>
                 </tr>
               </thead>
+
               <tbody>
                 {customers.map((customer) => (
-                  <tr
-                    key={customer.username}
-                    className="clickable-row"
-                    onClick={() =>
-                      navigate(
-                        `/admin/customers/${customer.username}/transactions`
-                      )
-                    }>
-                    <td><strong>{customer.username}</strong></td>
+                  <tr key={customer.username}>
+                    <td>
+                      <strong>{customer.username}</strong>
+                    </td>
                     <td>
                       {currency.format(
                         Number(customer.checkingAccount?.balance || 0)
@@ -163,14 +190,20 @@ useEffect(() => {
                     <td>
                       <button
                         className="delete-button"
-                        onClick={(event) => {
-                        event.stopPropagation();
-                        deleteCustomer(customer.username);}}>
+                        type="button"
+                        onClick={() => deleteCustomer(customer.username)}
+                      >
                         Delete
                       </button>
                     </td>
                   </tr>
                 ))}
+
+                {customers.length === 0 && (
+                  <tr>
+                    <td colSpan="4">No customers were found.</td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>

@@ -529,4 +529,128 @@ th { background: #f8fafc; color: var(--muted); font-size: .75rem; letter-spacing
     align-items: flex-start;
   }
 }
+
+.account-form-page {
+  min-height: 680px;
+  padding: 64px 20px 80px;
+  background: #f4f6f9;
+}
+
+.account-form-card {
+  width: min(750px, 100%);
+  margin: 0 auto;
+  padding: 38px;
+  background: #ffffff;
+  border: 1px solid #d9e1e9;
+  border-radius: 4px;
+  box-shadow: 0 16px 45px rgba(27, 59, 94, 0.1);
+}
+
+.account-form-heading {
+  margin-bottom: 28px;
+}
+
+.account-form-heading h1 {
+  margin: 0 0 12px;
+  color: #062f6f;
+  font-size: clamp(2rem, 4vw, 2.7rem);
+  line-height: 1.1;
+}
+
+.account-form-heading > p:last-child {
+  max-width: 620px;
+  margin: 0;
+  color: #667085;
+  font-size: 1.05rem;
+  line-height: 1.65;
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 20px;
+  color: #26364c;
+  font-size: 0.95rem;
+  font-weight: 750;
+}
+
+.form-field > input,
+.form-field > select {
+  width: 100%;
+  min-height: 58px;
+  padding: 12px 14px;
+  border: 1px solid #b9c5d1;
+  border-radius: 3px;
+  background: #ffffff;
+}
+
+.form-field input:focus,
+.form-field select:focus {
+  border-color: #056dae;
+  outline: 3px solid rgba(5, 109, 174, 0.14);
+}
+
+.password-field {
+  position: relative;
+  width: 100%;
+}
+
+.password-field input {
+  width: 100%;
+  min-height: 58px;
+  padding: 12px 94px 12px 14px;
+  border: 1px solid #b9c5d1;
+  border-radius: 3px;
+  background: #ffffff;
+}
+
+.password-toggle {
+  position: absolute;
+  top: 50%;
+  right: 12px;
+  min-width: 68px;
+  min-height: 36px;
+  padding: 7px 12px;
+  transform: translateY(-50%);
+  border: 1px solid #8fa0b2;
+  border-radius: 3px;
+  background: #ffffff;
+  color: #056dae;
+  font-weight: 750;
+}
+
+.password-toggle:hover {
+  background: #edf6fb;
+}
+
+.account-submit-button {
+  min-height: 56px;
+  margin-top: 2px;
+  font-size: 1rem;
+}
+
+.admin-create .password-field {
+  max-width: 100%;
+}
+
+@media (max-width: 600px) {
+  .account-form-page {
+    padding: 32px 12px 50px;
+  }
+
+  .account-form-card {
+    padding: 24px 18px;
+  }
+
+  .password-field input {
+    padding-right: 82px;
+  }
+
+  .password-toggle {
+    right: 8px;
+    min-width: 62px;
+  }
+}
+
 }
