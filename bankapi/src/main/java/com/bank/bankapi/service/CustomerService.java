@@ -362,7 +362,7 @@ public class CustomerService {
         }
 
         /*
-         * Generates a unique five-digit account ID.
+         * Generates a unique eight-digit account ID.
          */
         private int generateUniqueAccountId() {
 
@@ -371,7 +371,7 @@ public class CustomerService {
                 do {
                         generatedId = ThreadLocalRandom
                                         .current()
-                                        .nextInt(1000000000, 1000000000);
+                                        .nextInt(10000000, 100000000);
 
                 } while (userRepository.accountIdExists(
                                 generatedId));
@@ -430,8 +430,8 @@ public class CustomerService {
          */
         private void validateAccountId(int accountId) {
 
-                if (accountId < 10000
-                                || accountId > 99999) {
+                if (accountId < 10000000 
+                                || accountId > 99999999) {
 
                         throw new IllegalArgumentException(
                                         "Account ID must be a five-digit number");

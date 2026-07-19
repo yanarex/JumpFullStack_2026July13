@@ -5,8 +5,8 @@ import jakarta.validation.constraints.Min;
 
 public class UpdateAccountIdRequest {
 
-    @Min(value = 10000, message = "Account ID must contain five digits")
-    @Max(value = 99999, message = "Account ID must contain five digits")
+    @Min(value = 10000000, message = "Account ID must contain eight digits")
+    @Max(value = 99999999, message = "Account ID must contain eight digits")
     private int newId;
 
     public int getNewId() {
