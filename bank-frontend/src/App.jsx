@@ -116,7 +116,10 @@ export default function App() {
 
         <main className="site-main">
           <Routes>
-            <Route path="/" element={<Home />} />
+            <Route
+            path="/"
+            element={<Home session={session} />}
+            />
 
             <Route
               path="/about"
@@ -200,7 +203,18 @@ export default function App() {
                 </ProtectedAdminRoute>
               }
             />
-
+            <Route
+              path="/admin"
+              element={
+                <ProtectedAdminRoute session={session}>
+                  <Navigate to="/admin-dashboard" replace />
+                </ProtectedAdminRoute>
+              }
+            />
+              <Route
+              path="/admin"
+              element={<Navigate to="/admin-dashboard" replace />}
+            />
             <Route
               path="*"
               element={<NotFound />}

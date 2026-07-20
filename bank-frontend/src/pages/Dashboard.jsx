@@ -11,6 +11,7 @@ import DataService from "../api/DataService";
 import AccountCard from "../components/AccountCard";
 import Message from "../components/Message";
 
+
 const ACCOUNT_TYPES = [
   "CHECKING",
   "SAVINGS",
@@ -145,40 +146,51 @@ export default function Dashboard({
         </p>
 
         <button
-          type="button"
-          onClick={() =>
-            setView("overview")
-          }
-        >
-          Account Overview
-        </button>
+        type="button"
+        className={view === "overview" ? "active" : ""}
+        onClick={() => setView("overview")}
+      >
+        Account Overview
+      </button>
 
-        <button
-          type="button"
-          onClick={() =>
-            setView("own-transfer")
-          }
-        >
-          Transfer Between Accounts
-        </button>
+      <button
+        type="button"
+        className={view === "deposit" ? "active" : ""}
+        onClick={() => openAccountForm("deposit", "CHECKING")}
+      >
+        Deposit
+      </button>
 
-        <button
-          type="button"
-          onClick={() =>
-            setView("external-transfer")
-          }
-        >
-          Send Money
-        </button>
+      <button
+        type="button"
+        className={view === "withdraw" ? "active" : ""}
+        onClick={() => openAccountForm("withdraw", "CHECKING")}
+      >
+        Withdraw
+      </button>
 
-        <button
-          type="button"
-          onClick={() =>
-            navigate("/transactions")
-          }
-        >
-          Transaction History
-        </button>
+      <button
+        type="button"
+        className={view === "own-transfer" ? "active" : ""}
+        onClick={() => setView("own-transfer")}
+      >
+        Transfer Between Accounts
+      </button>
+
+      <button
+        type="button"
+        className={view === "external-transfer" ? "active" : ""}
+        onClick={() => setView("external-transfer")}
+      >
+        Send Money
+      </button>
+
+      <button
+        type="button"
+        onClick={() => navigate("/transactions")}
+      >
+        Transaction History
+      </button>
       </aside>
 
       <section className="dashboard-content">
@@ -233,9 +245,17 @@ export default function Dashboard({
               }
               onTransfer={() =>
                 setView(
-                  "external-transfer"
+                  "own-transfer"
                 )
               }
+              onSend={() => {
+                setExternalTransfer({
+                  ...externalTransfer,
+                  fromAccountType: "CHECKING",
+                });
+
+                setView("external-transfer");
+              }}
               onTransactions={() =>
                 navigate(
                   "/transactions?accountType=CHECKING"
@@ -262,9 +282,17 @@ export default function Dashboard({
               }
               onTransfer={() =>
                 setView(
-                  "external-transfer"
+                  "own-transfer"
                 )
               }
+              onSend={() => {
+                setExternalTransfer({
+                  ...externalTransfer,
+                  fromAccountType: "SAVINGS",
+                });
+
+                setView("external-transfer");
+              }}
               onTransactions={() =>
                 navigate(
                   "/transactions?accountType=SAVINGS"
@@ -479,7 +507,7 @@ export default function Dashboard({
             }}
           >
             <h2>
-              Send Money to Another Account
+              Send Money to Another Internal Account
             </h2>
 
             <label htmlFor="external-transfer-from">

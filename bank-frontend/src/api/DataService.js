@@ -199,6 +199,30 @@ const DataService = {
     );
   },
 
+  submitContactMessage(fullName, email, message) {
+    return request("/api/contact-messages", {
+      method: "POST",
+      body: JSON.stringify({
+        fullName,
+        email,
+        message,
+      }),
+    });
+  },
+
+  getContactMessages() {
+    return request("/api/admin/contact-messages");
+  },
+
+  deleteContactMessage(messageId) {
+    return request(
+      `/api/admin/contact-messages/${encodeURIComponent(messageId)}`,
+      {
+        method: "DELETE",
+      }
+    );
+  },
+
   createUserAsAdmin(
     username,
     password,

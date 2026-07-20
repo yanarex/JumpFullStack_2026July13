@@ -1,7 +1,9 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 import { useEffect, useState } from "react";
 import DataService from "../api/DataService";
 import Message from "../components/Message";
 import PasswordField from "../components/PasswordField";
+import { Link } from "react-router-dom";
 
 const currency = new Intl.NumberFormat("en-US", {
   style: "currency",
@@ -10,6 +12,7 @@ const currency = new Intl.NumberFormat("en-US", {
 
 export default function AdminDashboard({ session }) {
   const [customers, setCustomers] = useState([]);
+  const [contactMessages, setContactMessages] = useState([]);
   const [form, setForm] = useState({
     username: "",
     password: "",
@@ -24,8 +27,58 @@ export default function AdminDashboard({ session }) {
     setCustomers(customerData);
   }
 
+  async function refreshContactMessages() {
+  const data = await DataService.getContactMessages();
+
+  setContactMessages(
+    Array.isArray(data) ? data : []
+  );
+  }
+
+  async function deleteContactMessage(messageId) {
+    const confirmed = window.confirm(
+      "Are you sure you want to delete this contact message?"
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    setError("");
+    setMessage("");
+
+    try {
+      await DataService.deleteContactMessage(messageId);
+
+      setContactMessages((currentMessages) =>
+        currentMessages.filter(
+          (contactMessage) =>
+            contactMessage.id !== messageId
+        )
+      );
+
+      setMessage("Contact message deleted successfully.");
+    } catch (err) {
+      setError(
+        err.message ||
+          "Unable to delete the contact message."
+      );
+    }
+  }
+
   useEffect(() => {
-    refreshCustomers().catch((err) => setError(err.message));
+  async function loadAdminData() {
+    try {
+      await Promise.all([
+        refreshCustomers(),
+        refreshContactMessages(),
+      ]);
+    } catch (err) {
+      setError(err.message);
+    }
+  }
+
+  loadAdminData();
   }, []);
 
   async function createUser(event) {
@@ -84,7 +137,7 @@ export default function AdminDashboard({ session }) {
         <div className="dashboard-heading">
           <div>
             <p className="eyebrow">ADMINISTRATOR</p>
-            <h1>Customer management</h1>
+            <h1>Customer Management</h1>
             <p>Signed in as {session.username}</p>
           </div>
         </div>
@@ -173,9 +226,17 @@ export default function AdminDashboard({ session }) {
 
               <tbody>
                 {customers.map((customer) => (
-                  <tr key={customer.username}>
+                  <tr key={customer.username}> 
                     <td>
-                      <strong>{customer.username}</strong>
+                      <strong>
+                      <Link
+                        className="customer-name-link"
+                        to={`/admin/customers/${encodeURIComponent(
+                          customer.username
+                        )}/transactions`}>
+                        {customer.username}
+                      </Link>
+                    </strong>
                     </td>
                     <td>
                       {currency.format(
@@ -191,8 +252,7 @@ export default function AdminDashboard({ session }) {
                       <button
                         className="delete-button"
                         type="button"
-                        onClick={() => deleteCustomer(customer.username)}
-                      >
+                        onClick={() => deleteCustomer(customer.username)}>
                         Delete
                       </button>
                     </td>
@@ -208,6 +268,71 @@ export default function AdminDashboard({ session }) {
             </table>
           </div>
         </section>
+        <section className="table-card admin-messages-card">
+        <div className="table-heading">
+          <div>
+            <h2>Contact Messages</h2>
+            <p>
+              Messages submitted through the Contact Us page.
+            </p>
+          </div>
+
+          <span>
+            {contactMessages.length} total
+          </span>
+        </div>
+
+        <div className="admin-message-list">
+          {contactMessages.map((contactMessage) => (
+            <article
+              className="admin-message"
+              key={contactMessage.id}
+            >
+              <div className="admin-message-heading">
+                <div>
+                  <strong>
+                    {contactMessage.fullName}
+                  </strong>
+
+                  <a
+                    href={`mailto:${contactMessage.email}`}
+                  >
+                    {contactMessage.email}
+                  </a>
+                </div>
+
+                <div className="admin-message-controls">
+                  <time>
+                    {contactMessage.createdAt
+                      ? new Date(
+                          contactMessage.createdAt
+                        ).toLocaleString()
+                      : "Time unavailable"}
+                  </time>
+
+                  <button
+                    type="button"
+                    className="delete-message-button"
+                    onClick={() =>
+                      deleteContactMessage(contactMessage.id)
+                    }
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+
+              <p>{contactMessage.message}</p>
+            </article>
+          ))}
+
+          {contactMessages.length === 0 && (
+            <div className="admin-message-empty">
+              No contact messages have been submitted.
+            </div>
+          )}
+        </div>
+      </section>
       </div>
     </main>
   );

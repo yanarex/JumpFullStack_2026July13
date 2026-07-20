@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
+
 import DataService from "../api/DataService";
 import Message from "../components/Message";
 import PasswordField from "../components/PasswordField";
@@ -9,11 +10,13 @@ export default function Login({ onLogin }) {
     username: "",
     password: "",
   });
+
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
   async function submit(event) {
     event.preventDefault();
+
     setError("");
     setLoading(true);
 
@@ -36,21 +39,22 @@ export default function Login({ onLogin }) {
   }
 
   return (
-    <main className="account-form-page">
-      <section className="account-form-card">
-        <div className="account-form-heading">
+    <main className="login-page">
+      <section className="login-card">
+        <div className="login-heading">
           <p className="eyebrow">SECURE ONLINE BANKING</p>
-          <h1>Sign on</h1>
+          <h1>Log in</h1>
           <p>
-            Log in to view your balances and manage your Jump Bank accounts.
+            Access your Jump Bank accounts, balances, and banking tools.
           </p>
         </div>
 
-        <form onSubmit={submit}>
+        <form className="login-form" onSubmit={submit}>
           <Message type="error">{error}</Message>
 
           <label className="form-field">
             <span>Username</span>
+
             <input
               required
               autoComplete="username"
@@ -77,11 +81,11 @@ export default function Login({ onLogin }) {
           />
 
           <button
-            className="button primary full-width account-submit-button"
+            className="button primary full-width login-submit-button"
             disabled={loading}
             type="submit"
           >
-            {loading ? "Signing on..." : "Sign on"}
+            {loading ? "Logging in..." : "Log in"}
           </button>
 
           <p className="form-switch">

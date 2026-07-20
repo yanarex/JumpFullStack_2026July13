@@ -1,37 +1,34 @@
 import { useState } from "react";
 
 export default function PasswordField({
-  label,
+  label = "Password",
   value,
   onChange,
   autoComplete = "current-password",
-  minLength,
-  name,
+  required = true,
 }) {
-  const [visible, setVisible] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   return (
     <label className="form-field">
       <span>{label}</span>
 
-      <div className="password-field">
+      <div className="password-input-wrapper">
         <input
-          required
-          name={name}
-          type={visible ? "text" : "password"}
+          type={showPassword ? "text" : "password"}
           value={value}
-          minLength={minLength}
-          autoComplete={autoComplete}
           onChange={onChange}
+          autoComplete={autoComplete}
+          required={required}
         />
 
         <button
-          className="password-toggle"
+          className="password-show-button"
           type="button"
-          aria-label={visible ? `Hide ${label}` : `Show ${label}`}
-          onClick={() => setVisible((current) => !current)}
+          onClick={() => setShowPassword((current) => !current)}
+          aria-label={showPassword ? "Hide password" : "Show password"}
         >
-          {visible ? "Hide" : "Show"}
+          {showPassword ? "Hide" : "Show"}
         </button>
       </div>
     </label>

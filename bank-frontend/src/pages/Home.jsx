@@ -1,6 +1,86 @@
-import { Link } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 
-export default function Home() {
+import DataService from "../api/DataService";
+
+export default function Home({ session }) {
+
+  const navigate = useNavigate();
+
+  const [customer, setCustomer] = useState(null);
+  const [loadingAccount, setLoadingAccount] = useState(false);
+
+  const isCustomer =
+    Boolean(session?.username) &&
+    String(session?.userType || session?.role || "")
+      .replace("ROLE_", "")
+      .toUpperCase() === "CUSTOMER";
+
+      useEffect(() => {
+        let cancelled = false;
+
+        async function loadCheckingAccount() {
+          if (!isCustomer) {
+            setCustomer(null);
+            return;
+          }
+
+          setLoadingAccount(true);
+
+          try {
+            const customerData = await DataService.getCustomer(
+              session.username
+            );
+
+            if (!cancelled) {
+              setCustomer(customerData);
+            }
+          } catch (error) {
+            console.error(
+              "Unable to load the home-page account:",
+              error
+            );
+
+            if (!cancelled) {
+              setCustomer(null);
+            }
+          } finally {
+            if (!cancelled) {
+              setLoadingAccount(false);
+            }
+        }
+    }
+
+    loadCheckingAccount();
+
+    return () => {
+      cancelled = true;
+    };
+
+  }, [isCustomer, session?.username]);
+
+  const checkingAccount = customer?.checkingAccount;
+
+  const displayedBalance =
+    isCustomer && checkingAccount
+      ? Number(checkingAccount.balance || 0)
+      : 1738.69;
+
+  const displayedAccountName =
+    isCustomer && checkingAccount
+      ? `${customer.username}'s Checking`
+      : "Jump Bank Checking";
+
+  const displayedDescription =
+    isCustomer && checkingAccount
+      ? "Your checking account is available online."
+      : "Everyday banking without the clutter.";
+
+  const currency = new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+  });
+
   return (
     <main>
       <section className="home-hero">
@@ -22,23 +102,88 @@ export default function Home() {
             </div>
           </div>
 
+          {isCustomer ? (
           <div className="hero-panel">
             <div className="hero-panel-header">
-              <span>Jump Bank Checking</span>
-              <span className="mini-pill">Online</span>
+              <span>{displayedAccountName}</span>
+
+              <span className="mini-pill">
+                {loadingAccount ? "Loading" : "Online"}
+              </span>
             </div>
-            <p>Everyday banking without the clutter.</p>
+
+            <p>{displayedDescription}</p>
+
             <div className="mock-balance">
               <span>Available balance</span>
-              <strong>$1,738.69</strong>
+
+              <strong>
+                {loadingAccount
+                  ? "Loading..."
+                  : currency.format(displayedBalance)}
+              </strong>
             </div>
+
             <div className="mock-actions">
-              <span>Deposit</span>
-              <span>Transfer</span>
-              <span>Send</span>
+              <button
+                type="button"
+                onClick={() =>
+                  navigate("/dashboard", {
+                    state: { view: "deposit" },
+                  })
+                }
+              >
+                Deposit
+              </button>
+
+              <button
+                type="button"
+                onClick={() =>
+                  navigate("/dashboard", {
+                    state: { view: "own-transfer" },
+                  })
+                }
+              >
+                Transfer
+              </button>
+
+              <button
+                type="button"
+                onClick={() =>
+                  navigate("/dashboard", {
+                    state: { view: "external-transfer" },
+                  })
+                }
+              >
+                Send
+              </button>
             </div>
           </div>
-        </div>
+        ) : (
+          <div className="guest-card-panel">
+            <img
+              className="guest-bank-card-image"
+              src="/images/jump_bank_card.jpg"
+              alt="Jump Bank Visa debit card"
+            />
+
+            <div className="guest-card-actions">
+              <Link
+                className="button primary"
+                to="/login"
+              >
+                Log in to view your account
+              </Link>
+
+              <Link
+                className="button secondary"
+                to="/create-account"
+              >
+                Open an account
+              </Link>
+            </div>
+          </div>
+        )} </div>
       </section>
 
       <section className="feature-strip">

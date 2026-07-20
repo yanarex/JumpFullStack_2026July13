@@ -6,6 +6,15 @@ export default function Header({ session, onLogout }) {
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
 
+  const isAdmin =
+  String(session?.userType || session?.role || "")
+    .replace("ROLE_", "")
+    .toUpperCase() === "ADMIN";
+
+const dashboardPath = isAdmin
+  ? "/admin-dashboard"
+  : "/dashboard";
+  
   function closeMenu() {
     setOpen(false);
   }
@@ -62,13 +71,8 @@ export default function Header({ session, onLogout }) {
 
             {session && (
               <>
-                <NavLink
-                  to={String(session.userType).toUpperCase() === "ADMIN"
-                    ? "/admin"
-                    : "/dashboard"}
-                  onClick={closeMenu}
-                >
-                  Dashboard
+                <NavLink to={dashboardPath} onClick={closeMenu}>
+                Dashboard
                 </NavLink>
                 <button className="sign-out-button" onClick={signOut}>
                   Sign out

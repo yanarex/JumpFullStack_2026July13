@@ -1,12 +1,9 @@
-import AccountNumber from "./AccountNumber";
+import { useState } from "react";
 
-const currency = new Intl.NumberFormat(
-  "en-US",
-  {
-    style: "currency",
-    currency: "USD",
-  }
-);
+const currency = new Intl.NumberFormat("en-US", {
+  style: "currency",
+  currency: "USD",
+});
 
 export default function AccountCard({
   name,
@@ -14,27 +11,59 @@ export default function AccountCard({
   onDeposit,
   onWithdraw,
   onTransfer,
+  onSend,
   onTransactions,
 }) {
+  const [showAccountNumber, setShowAccountNumber] =
+    useState(false);
+
+  const fullAccountNumber = String(
+    account?.id ?? "00000000"
+  );
+
+  const hiddenAccountNumber = `••••••${fullAccountNumber.slice(
+    -2
+  )}`;
+
   return (
     <article className="account-card">
-      <div className="account-card-heading">
+      <div className="account-card-top">
         <div>
           <p className="eyebrow">
-            {name} Account
+            {name.toUpperCase()} ACCOUNT
           </p>
 
-          <h2>{name} Account</h2>
+          <span className="account-name">
+            {name} Account
+          </span>
         </div>
 
-        <span className="status-badge">
-          Active
-        </span>
+        <span className="account-status">Active</span>
       </div>
 
-      <AccountNumber
-        accountId={account?.id}
-      />
+      <div className="account-number-section">
+        <div className="account-number-line">
+          <span className="account-number-label">
+            Account Number:
+          </span>
+
+          <strong className="account-number-value">
+            {showAccountNumber
+              ? fullAccountNumber
+              : hiddenAccountNumber}
+          </strong>
+        </div>
+
+        <button
+          type="button"
+          className="account-number-toggle"
+          onClick={() =>
+            setShowAccountNumber((current) => !current)
+          }
+        >
+          {showAccountNumber ? "Hide" : "Show"}
+        </button>
+      </div>
 
       <div className="account-balance">
         <span>Available Balance</span>
@@ -47,38 +76,32 @@ export default function AccountCard({
       </div>
 
       <div className="account-card-actions">
-        <button
-          type="button"
-          onClick={onDeposit}
-        >
-          Deposit
+      <button type="button" onClick={onDeposit}>
+        Deposit
+      </button>
+
+      <button type="button" onClick={onWithdraw}>
+        Withdraw
+      </button>
+
+      {onTransfer && (
+        <button type="button" onClick={onTransfer}>
+          Transfer
         </button>
+      )}
 
-        <button
-          type="button"
-          onClick={onWithdraw}
-        >
-          Withdraw
+      {onSend && (
+        <button type="button" onClick={onSend}>
+          Send Money
         </button>
+      )}
 
-        {onTransfer && (
-          <button
-            type="button"
-            onClick={onTransfer}
-          >
-            Transfer
-          </button>
-        )}
-
-        {onTransactions && (
-          <button
-            type="button"
-            onClick={onTransactions}
-          >
-            Transactions
-          </button>
-        )}
-      </div>
+      {onTransactions && (
+        <button type="button" onClick={onTransactions}>
+          Transaction History
+        </button>
+      )}
+    </div>
     </article>
   );
 }
