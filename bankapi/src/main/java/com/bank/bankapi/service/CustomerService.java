@@ -195,9 +195,13 @@ public class CustomerService {
                                 customer,
                                 fromAccountType);
 
-                Account destination = fromAccountType == AccountType.CHECKING
-                                ? customer.getSavingsAccount()
-                                : customer.getCheckingAccount();
+                AccountType destinationAccountType = fromAccountType == AccountType.CHECKING
+                                ? AccountType.SAVINGS
+                                : AccountType.CHECKING;
+
+                Account destination = selectAccount(
+                                customer,
+                                destinationAccountType);
 
                 if (amount.compareTo(source.getBalance()) > 0) {
                         throw new IllegalArgumentException(
@@ -211,6 +215,32 @@ public class CustomerService {
 
                 destination.setBalance(
                                 destination.getBalance().add(amount));
+
+                customer.addTransaction(
+                                new Transaction(
+                                                TransactionType.TRANSFER_SENT,
+                                                fromAccountType,
+                                                amount.negate(),
+                                                source.getBalance(),
+                                                "Transfer from "
+                                                                + fromAccountType
+                                                                + " to "
+                                                                + destinationAccountType,
+                                                customer.getUsername(),
+                                                destination.getId()));
+
+                customer.addTransaction(
+                                new Transaction(
+                                                TransactionType.TRANSFER_RECEIVED,
+                                                destinationAccountType,
+                                                amount,
+                                                destination.getBalance(),
+                                                "Transfer from "
+                                                                + fromAccountType
+                                                                + " to "
+                                                                + destinationAccountType,
+                                                customer.getUsername(),
+                                                source.getId()));
 
                 return userRepository.save(customer);
         }

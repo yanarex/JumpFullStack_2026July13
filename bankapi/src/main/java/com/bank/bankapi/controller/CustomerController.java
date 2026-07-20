@@ -7,7 +7,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import com.bank.bankapi.dto.AdminTransferRequest;
+
 import com.bank.bankapi.dto.AmountRequest;
 import com.bank.bankapi.dto.CreateCustomerRequest;
 import com.bank.bankapi.dto.ExternalTransferRequest;

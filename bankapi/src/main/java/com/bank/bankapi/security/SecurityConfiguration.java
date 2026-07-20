@@ -40,6 +40,9 @@ public class SecurityConfiguration {
                 // Anyone can create a normal customer.
                 .requestMatchers(HttpMethod.POST, "/api/customers")
                 .permitAll()
+                // Anyone can contact an admin
+                .requestMatchers(HttpMethod.POST,"/api/contact-messages")
+                .permitAll()
                 // Only admins can access admin endpoints.
                 .requestMatchers("/api/admin/**")
                  .hasRole("ADMIN")

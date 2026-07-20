@@ -8,6 +8,8 @@ import com.bank.bankapi.model.User;
 import com.bank.bankapi.model.UserType;
 import com.bank.bankapi.repository.UserRepository;
 import com.bank.bankapi.service.CustomerService;
+import com.bank.bankapi.model.ContactMessage;
+import com.bank.bankapi.repository.ContactMessageRepository;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -21,14 +23,17 @@ public class AdminController {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final CustomerService customerService;
+    private final ContactMessageRepository contactMessageRepository;
 
         AdminController(
         UserRepository userRepository,
         PasswordEncoder passwordEncoder,
-        CustomerService customerService) {
+        CustomerService customerService,
+        ContactMessageRepository contactMessageRepository) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.customerService = customerService;
+        this.contactMessageRepository = contactMessageRepository;
     }
 
     @PostMapping("/users")
@@ -91,5 +96,26 @@ public class AdminController {
 
                 return ResponseEntity.ok(
                             customerService.getTransactions(username));
+    }
+    
+    @GetMapping("/contact-messages")
+    public ResponseEntity<List<ContactMessage>> getContactMessages() {
+
+        return ResponseEntity.ok(
+                contactMessageRepository
+                        .findAllByOrderByCreatedAtDesc());
+    }
+
+    @DeleteMapping("/contact-messages/{messageId}")
+    public ResponseEntity<Void> deleteContactMessage(
+            @PathVariable String messageId) {
+
+        if (!contactMessageRepository.existsById(messageId)) {
+            return ResponseEntity.notFound().build();
+        }
+
+        contactMessageRepository.deleteById(messageId);
+
+        return ResponseEntity.noContent().build();
     }
 }
