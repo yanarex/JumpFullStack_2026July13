@@ -64,7 +64,3 @@ This project focuses on:
 ## Author
 
 Tony Arrington
-
-B.S. Computer Science
-
-Florida Institute of Technology
