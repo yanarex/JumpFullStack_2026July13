@@ -97,7 +97,7 @@ A React frontend was created to communicate with the REST API, providing users w
 
 ### Home Page
 
-![Home Page](images/Home Page.png)
+![Home Page](images/HomePage.png)
 
 ### Customer Dashboard
 
