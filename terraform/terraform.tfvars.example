@@ -1,0 +1,5 @@
+aws_region    = "us-east-1"
+instance_type = "t2.micro"
+key_name      = "YOUR_EXISTING_KEY_PAIR_NAME"
+ssh_cidr      = "203.0.113.10/32"
+project_name  = "bank-api"
